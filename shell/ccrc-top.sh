@@ -52,9 +52,9 @@ slist_A="squall maelstrom blizzard monsoon"
 ncpu_A=16	
 nmem_A=256
 
-slist_B="cyclone hurricane typhoon" 
-ncpu_B=12
-nmem_B=96
+slist_B="cyclone hurricane typhoon"
+ncpu_B=16
+nmem_B=256
 
 ##################################################
 
@@ -104,7 +104,7 @@ function print_mem
 	elif [[ "${slist_B/$server}" != "${slist_B}" ]];then
 	    n_cpus="$ncpu_B"
 	    n_mem="$nmem_B"
-          top_flag=" -Mbmn1"
+          top_flag=" -bn1"
 	else
 	    echo "Error with choice of server or server lists. Exiting"
 	    exit 1
@@ -112,10 +112,10 @@ function print_mem
 
       # SSH in and get info: CPU, MEM, TOP, FINGER
       cpu_percent=$(ssh "$host" mpstat 1 1  | grep "Average:" | awk '{print $3}') 
-      mem_load=$(ssh "$host" free -g | grep "+ buffers/cache" | awk '{print $3}') 
+      mem_load=$(ssh "$host" free -g | grep "^Mem:" | awk '{print $4}')
       # 2"x" here so that only one zid field is converted to names below
-      st=$(ssh "$host"  top "$top_flag"  | sed '1,6d' | awk ' $10>="'"$mem_val"'" { \
-            print $2"x",$2,$8,$1,$9,$5,$10,$11/60,$12 }' )  
+      st=$(ssh "$host"  top "$top_flag"  | sed '1,7d' | awk ' $10>="'"$mem_val"'" { \
+            print $2"x",$2,$8,$1,$9,$5,$10,$11/60,$12"\n" }' )
       mem_percent=$(bc <<< "scale=3;("$mem_load"/"$n_mem")*100")
       fga=$(echo "$st" | awk ' match($2, /z/){print $2} ') #only finger strings start "z"
       fgs=$(ssh "$host" finger  $fga |  grep  "Name") # unfortunately removes duplicates
